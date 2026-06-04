@@ -1,0 +1,327 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Codot Gateway Controls</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+</head>
+<body class="bg-slate-950 text-slate-100 font-sans min-h-screen">
+    <div class="max-w-6xl mx-auto px-4 py-8">
+        
+        <div class="flex flex-col md:flex-row justify-between items-start md:items-center border-b border-slate-800 pb-6 mb-8 gap-4">
+            <div>
+                <h1 class="text-3xl font-extrabold text-emerald-400 font-mono tracking-wider">🤖 CODOT_GATEWAY</h1>
+                <p class="text-slate-400 text-sm mt-1">Enterprise FinOps & Local Context-Caching Plane for AI Coding Agents</p>
+            </div>
+            <div class="flex items-center gap-3">
+                <span class="bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 px-3 py-1 rounded-full text-xs font-mono animate-pulse">● Ingestion Mesh Active</span>
+            </div>
+        </div>
+
+        <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
+            
+            <div class="lg:col-span-2 space-y-6">
+                <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                    <div class="bg-slate-900/60 border border-slate-800/80 rounded-xl p-6 shadow-xl backdrop-blur-sm">
+                        <p class="text-xs font-semibold text-slate-500 uppercase tracking-wider">Optimizations Routed</p>
+                        <p id="total-requests" class="text-4xl font-black text-slate-100 mt-2 font-mono">0</p>
+                    </div>
+                    <div class="bg-slate-900/60 border border-slate-800/80 rounded-xl p-6 shadow-xl backdrop-blur-sm">
+                        <p class="text-xs font-semibold text-slate-500 uppercase tracking-wider">Token Outlays Saved</p>
+                        <p id="total-savings" class="text-4xl font-black text-emerald-400 mt-2 font-mono">$0.0000</p>
+                    </div>
+                </div>
+
+                <div class="bg-slate-900/40 border border-slate-800 rounded-xl overflow-hidden shadow-2xl">
+                    <div class="px-6 py-4 border-b border-slate-800 bg-slate-900/80 flex justify-between items-center">
+                        <h3 class="font-bold text-slate-200 text-sm font-mono uppercase tracking-wider">🎯 Live Intelligence Route Map</h3>
+                        <span class="text-xs text-slate-500 font-mono">Polling standard stream data...</span>
+                    </div>
+                    <div class="overflow-x-auto">
+                        <table class="w-full text-left border-collapse">
+                            <thead>
+                                <tr class="text-xs font-semibold text-slate-400 uppercase tracking-wider border-b border-slate-800 bg-slate-950">
+                                    <th class="px-6 py-3">Timestamp</th>
+                                    <th class="px-6 py-3">Agent Intent</th>
+                                    <th class="px-6 py-3">Routed Target</th>
+                                    <th class="px-6 py-3">Cost Basis</th>
+                                </tr>
+                            </thead>
+                            <tbody id="log-table" class="divide-y divide-slate-800/40 font-mono text-xs">
+                                </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+
+            <div class="space-y-6">
+                <div class="bg-slate-900/60 border border-slate-800 rounded-xl p-6 shadow-xl">
+                    <h3 class="text-sm font-bold text-slate-200 font-mono uppercase tracking-wider border-b border-slate-800 pb-3 mb-4 flex items-center gap-2">
+                        🔑 Secure BYOK Vault
+                    </h3>
+                    <p class="text-xs text-slate-400 mb-4">Keys are encrypted and kept entirely local to this machine's SQLite layer.</p>
+                    
+                    <div class="space-y-4">
+                        <div>
+                            <label class="block text-xs font-semibold text-slate-400 uppercase mb-2">Select Provider</label>
+                            <select id="key-provider" class="w-full bg-slate-950 border border-slate-800 rounded-lg px-3 py-2 text-sm text-slate-200 focus:outline-none focus:border-emerald-500 font-mono">
+                                <option value="openai">OpenAI (GPT Tiers)</option>
+                                <option value="google">Google Gemini (Flash Mesh)</option>
+                                <option value="anthropic">Anthropic Claude (Frontier)</option>
+                            </select>
+                        </div>
+                        <div>
+                            <label class="block text-xs font-semibold text-slate-400 uppercase mb-2">API Token String</label>
+                            <input type="password" id="key-value" placeholder="paste sk-... or AIzaSy..." class="w-full bg-slate-950 border border-slate-800 rounded-lg px-3 py-2 text-sm text-slate-200 focus:outline-none focus:border-emerald-500 font-mono">
+                        </div>
+                        <button onclick="submitKey()" class="w-full bg-emerald-600 hover:bg-emerald-500 text-slate-950 font-bold py-2 rounded-lg text-xs transition-all uppercase tracking-wider font-mono">
+                            Commit Key to Database
+                        </button>
+                        <p id="vault-status" class="text-center text-xs text-emerald-400 hidden font-mono">✓ Key updated successfully!</p>
+                    </div>
+                </div>
+
+                <div class="bg-slate-900/60 border border-slate-800 rounded-xl p-6 shadow-xl space-y-4">
+                    <h3 class="text-sm font-bold text-slate-200 font-mono uppercase tracking-wider border-b border-slate-800 pb-3 flex items-center gap-2">
+                        ⚙️ Model Registry Board
+                    </h3>
+                    
+                    <div id="model-registry-list" class="space-y-3 max-h-64 overflow-y-auto pr-1">
+                        <!-- Dynamic Model rows will go here -->
+                    </div>
+
+                    <div class="border-t border-slate-800/80 pt-4">
+                        <h4 class="text-xs font-semibold text-slate-400 uppercase mb-3">Onboard New Model</h4>
+                        <div class="space-y-2 text-xs">
+                            <div class="grid grid-cols-2 gap-2">
+                                <input type="text" id="new-model-id" placeholder="Model ID" class="bg-slate-950 border border-slate-800 rounded px-2 py-1 text-slate-200 focus:outline-none focus:border-emerald-500 font-mono">
+                                <select id="new-model-provider" class="bg-slate-950 border border-slate-800 rounded px-2 py-1 text-slate-200 focus:outline-none focus:border-emerald-500 font-mono">
+                                    <option value="openai">OpenAI</option>
+                                    <option value="google">Google</option>
+                                    <option value="anthropic">Anthropic</option>
+                                    <option value="deepseek">DeepSeek</option>
+                                </select>
+                            </div>
+                            <div class="grid grid-cols-3 gap-2">
+                                <select id="new-model-tier" class="bg-slate-950 border border-slate-800 rounded px-2 py-1 text-slate-200 focus:outline-none focus:border-emerald-500 font-mono">
+                                    <option value="flash">Flash</option>
+                                    <option value="balanced">Balanced</option>
+                                    <option value="frontier">Frontier</option>
+                                </select>
+                                <input type="number" step="0.001" id="new-model-input-cost" placeholder="In$/M" class="bg-slate-950 border border-slate-800 rounded px-2 py-1 text-slate-200 focus:outline-none focus:border-emerald-500 font-mono">
+                                <input type="number" step="0.001" id="new-model-output-cost" placeholder="Out$/M" class="bg-slate-950 border border-slate-800 rounded px-2 py-1 text-slate-200 focus:outline-none focus:border-emerald-500 font-mono">
+                            </div>
+                            <button onclick="registerNewModel()" class="w-full bg-emerald-600 hover:bg-emerald-500 text-slate-950 font-bold py-1.5 rounded text-xs transition-all uppercase tracking-wider font-mono">
+                                Add Model to Registry
+                            </button>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="bg-slate-900/60 border border-slate-800 rounded-xl p-6 shadow-xl space-y-4">
+                    <h3 class="text-sm font-bold text-slate-200 font-mono uppercase tracking-wider border-b border-slate-800 pb-3 flex items-center gap-2">
+                        📁 Semantic Context Cache
+                    </h3>
+                    <div class="space-y-3 text-xs font-mono">
+                        <div class="flex justify-between border-b border-slate-800/40 pb-2">
+                            <span class="text-slate-500">Vector Embeddings Storage:</span>
+                            <span id="cache-engine-label" class="text-emerald-400">Loading Engine...</span>
+                        </div>
+                        <div class="flex justify-between border-b border-slate-800/40 pb-2">
+                            <span class="text-slate-500">Codebase Mapping Status:</span>
+                            <span id="mapping-status-label" class="text-slate-300">Scanning Local Directories...</span>
+                        </div>
+                        <div class="flex justify-between">
+                            <span class="text-slate-500">Last Context Scan:</span>
+                            <span class="text-slate-400">Just Now</span>
+                        </div>
+                    </div>
+                </div>
+
+            </div>
+        </div>
+    </div>
+
+    <script>
+        async function fetchMetrics() {
+            try {
+                const res = await fetch('/api/metrics');
+                const data = await res.json();
+                
+                document.getElementById('total-requests').innerText = data.total_requests;
+                document.getElementById('total-savings').innerText = '$' + data.total_savings.toFixed(4);
+                
+                const tbody = document.getElementById('log-table');
+                tbody.innerHTML = '';
+                
+                if(!data.logs || data.logs.length === 0) {
+                    tbody.innerHTML = `<tr><td colspan="4" class="px-6 py-8 text-center text-slate-500">No agent interactions intercepted yet. Stream prompts from Cursor/Claude Code to trigger optimizations.</td></tr>`;
+                    return;
+                }
+                
+                data.logs.forEach(log => {
+                    const row = document.createElement('tr');
+                    row.className = "hover:bg-slate-800/10 transition-colors border-b border-slate-800/30";
+                    row.innerHTML = `
+                        <td class="px-6 py-4 text-slate-500">${log.timestamp.split(' ')[1] || log.timestamp}</td>
+                        <td class="px-6 py-4 font-semibold text-rose-400">${log.requested_model}</td>
+                        <td class="px-6 py-4 font-semibold text-emerald-400">➔ ${log.routed_model}</td>
+                        <td class="px-6 py-4 text-slate-400">$${log.estimated_cost.toFixed(5)}</td>
+                    `;
+                    tbody.appendChild(row);
+                });
+            } catch (err) {
+                console.error("Failed to sync dashboard metrics engine:", err);
+            }
+        }
+
+        async function submitKey() {
+            const provider = document.getElementById('key-provider').value;
+            const key = document.getElementById('key-value').value;
+            
+            if(!key) return;
+
+            try {
+                const response = await fetch('/api/keys', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ provider, key })
+                });
+
+                if(response.ok) {
+                    const statusText = document.getElementById('vault-status');
+                    statusText.classList.remove('hidden');
+                    document.getElementById('key-value').value = '';
+                    setTimeout(() => statusText.classList.add('hidden'), 3000);
+                }
+            } catch(err) {
+                alert("Failed to securely save API parameters.");
+            }
+        }
+
+        async function fetchModels() {
+            try {
+                const res = await fetch('/api/models');
+                const models = await res.json();
+                
+                const container = document.getElementById('model-registry-list');
+                container.innerHTML = '';
+                
+                if(!models || models.length === 0) {
+                    container.innerHTML = `<div class="text-xs text-slate-500 text-center py-4">No models registered yet.</div>`;
+                    return;
+                }
+                
+                models.forEach(model => {
+                    const div = document.createElement('div');
+                    div.className = "flex items-center justify-between bg-slate-950/60 border border-slate-800/60 rounded-lg p-3 text-xs font-mono";
+                    
+                    const isChecked = model.is_active === 1;
+                    const statusText = isChecked ? "ACTIVE" : "DISABLED";
+                    
+                    div.innerHTML = `
+                        <div class="space-y-1">
+                            <div class="flex items-center gap-1.5">
+                                <span class="font-bold text-slate-100">${model.id}</span>
+                                <span class="text-[10px] bg-slate-800 text-slate-400 px-1 py-0.5 rounded uppercase">${model.provider}</span>
+                            </div>
+                            <div class="text-[10px] text-slate-400">
+                                Tier: <span class="text-rose-400">${model.capability_tier}</span> | Cost: $${model.input_cost_per_m}/$${model.output_cost_per_m}
+                            </div>
+                        </div>
+                        <button onclick="toggleModelStatus('${model.id}', '${model.provider}', '${model.capability_tier}', ${model.input_cost_per_m}, ${model.output_cost_per_m}, ${model.is_active})" 
+                            class="px-2 py-1 rounded border ${isChecked ? 'border-emerald-500/30 bg-emerald-500/10 text-emerald-400 hover:bg-emerald-500/20' : 'border-slate-800 bg-slate-900 text-slate-400 hover:bg-slate-800'} text-[10px] font-bold transition-all">
+                            ${statusText}
+                        </button>
+                    `;
+                    container.appendChild(div);
+                });
+            } catch (err) {
+                console.error("Failed to load model registry database:", err);
+            }
+        }
+
+        async function toggleModelStatus(id, provider, capability_tier, input_cost, output_cost, current_active) {
+            const nextActive = current_active === 1 ? 0 : 1;
+            try {
+                const response = await fetch('/api/models', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        id,
+                        provider,
+                        capability_tier,
+                        input_cost_per_m: input_cost,
+                        output_cost_per_m: output_cost,
+                        is_active: nextActive
+                    })
+                });
+                if(response.ok) {
+                    fetchModels();
+                }
+            } catch(err) {
+                alert("Failed to toggle model active status.");
+            }
+        }
+
+        async function registerNewModel() {
+            const id = document.getElementById('new-model-id').value.trim();
+            const provider = document.getElementById('new-model-provider').value;
+            const capability_tier = document.getElementById('new-model-tier').value;
+            const inputCostVal = parseFloat(document.getElementById('new-model-input-cost').value);
+            const outputCostVal = parseFloat(document.getElementById('new-model-output-cost').value);
+            
+            if(!id || isNaN(inputCostVal) || isNaN(outputCostVal)) {
+                alert("Please fill out all onboarding fields properly.");
+                return;
+            }
+            
+            try {
+                const response = await fetch('/api/models', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        id,
+                        provider,
+                        capability_tier,
+                        input_cost_per_m: inputCostVal,
+                        output_cost_per_m: outputCostVal,
+                        is_active: 1
+                    })
+                });
+                if(response.ok) {
+                    document.getElementById('new-model-id').value = '';
+                    document.getElementById('new-model-input-cost').value = '';
+                    document.getElementById('new-model-output-cost').value = '';
+                    fetchModels();
+                }
+            } catch(err) {
+                alert("Failed to onboard new model configuration.");
+            }
+        }
+
+        async function fetchSystemStatus() {
+            try {
+                const res = await fetch('/api/system/status');
+                const status = await res.json();
+                
+                document.getElementById('cache-engine-label').innerText = status.cache_engine;
+                document.getElementById('mapping-status-label').innerText = status.mapping_status + " (AST Map)";
+            } catch (err) {
+                console.error("Dashboard failed to retrieve live system configurations:", err);
+            }
+        }
+
+        // Initialize and cycle fetch routines
+        fetchMetrics();
+        fetchModels();
+        fetchSystemStatus();
+        setInterval(() => {
+            fetchMetrics();
+            fetchModels();
+        }, 2500);
+        setInterval(fetchSystemStatus, 5000);
+    </script>
+</body>
+</html>

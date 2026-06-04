@@ -43,8 +43,8 @@ TMP_FILE="/tmp/${BINARY_NAME}"
 echo "📥 Downloading compiled asset for your machine architecture..."
 echo "🔗 Source: $DOWNLOAD_URL"
 
-# Execute network fetch cleanly via curl
-if ! curl -sSL -fail -o "$TMP_FILE" "$DOWNLOAD_URL"; then
+# Execute network fetch cleanly, bypassing local curl aliases and .curlrc settings
+if ! \curl -q -sSL --no-include -fail -o "$TMP_FILE" "$DOWNLOAD_URL"; then
     echo "❌ Download failed! Please confirm that the release version is published and public."
     exit 1
 fi

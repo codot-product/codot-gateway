@@ -1,0 +1,9 @@
+.env
+gateway_metrics.db
+*.db
+dist/
+.DS_Store
+cmd/.DS_Store
+internal/.DS_Store
+codot
+gateway

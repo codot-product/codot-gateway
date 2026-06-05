@@ -88,6 +88,38 @@ func main() {
 	http.HandleFunc("/api/keys", func(w http.ResponseWriter, r *http.Request) {
 		w.Header().Set("Access-Control-Allow-Origin", "*")
 		w.Header().Set("Access-Control-Allow-Headers", "Content-Type")
+		w.Header().Set("Access-Control-Allow-Methods", "GET, POST, OPTIONS")
+
+		if r.Method == http.MethodOptions {
+			w.WriteHeader(http.StatusOK)
+			return
+		}
+
+		if r.Method == http.MethodGet {
+			// Return masked key previews so the dashboard can verify what's stored
+			type KeyStatus struct {
+				Provider string `json:"provider"`
+				Stored   bool   `json:"stored"`
+				Preview  string `json:"preview"` // e.g. "sk-ant-api0..." or ""
+			}
+			providers := []string{"anthropic", "openai", "google"}
+			var statuses []KeyStatus
+			for _, p := range providers {
+				k := db.GetAPIKey(p)
+				preview := ""
+				if k != "" {
+					end := 12
+					if len(k) < end {
+						end = len(k)
+					}
+					preview = k[:end] + "..."
+				}
+				statuses = append(statuses, KeyStatus{Provider: p, Stored: k != "", Preview: preview})
+			}
+			w.Header().Set("Content-Type", "application/json")
+			json.NewEncoder(w).Encode(statuses)
+			return
+		}
 
 		if r.Method == http.MethodPost {
 			var configData map[string]string
@@ -110,6 +142,7 @@ func main() {
 			return
 		}
 	})
+
 
 	// Attach dynamic model configuration hooks
 	http.HandleFunc("/api/models", handleModelRegistryAPI)

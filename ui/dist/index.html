@@ -80,6 +80,14 @@
                         </button>
                         <p id="vault-status" class="text-center text-xs text-emerald-400 hidden font-mono">✓ Key updated successfully!</p>
                     </div>
+
+                    <!-- Vault Key Status -->
+                    <div class="border-t border-slate-800/80 pt-4 mt-2">
+                        <p class="text-xs font-semibold text-slate-400 uppercase mb-3 tracking-wider">Stored Key Status</p>
+                        <div id="vault-key-status" class="space-y-2 font-mono text-xs">
+                            <div class="text-slate-500 text-center py-2">Loading vault...</div>
+                        </div>
+                    </div>
                 </div>
 
                 <div class="bg-slate-900/60 border border-slate-800 rounded-xl p-6 shadow-xl space-y-4">
@@ -194,9 +202,45 @@
                     statusText.classList.remove('hidden');
                     document.getElementById('key-value').value = '';
                     setTimeout(() => statusText.classList.add('hidden'), 3000);
+                    fetchKeyStatus(); // Refresh the key preview immediately after save
                 }
             } catch(err) {
                 alert("Failed to securely save API parameters.");
+            }
+        }
+
+        async function fetchKeyStatus() {
+            try {
+                const res = await fetch('/api/keys');
+                const statuses = await res.json();
+                const container = document.getElementById('vault-key-status');
+                container.innerHTML = '';
+
+                const providerLabels = { anthropic: 'Anthropic', openai: 'OpenAI', google: 'Google' };
+
+                statuses.forEach(s => {
+                    const row = document.createElement('div');
+                    row.className = 'flex items-center justify-between py-1.5 border-b border-slate-800/40 last:border-0';
+
+                    if (s.stored) {
+                        row.innerHTML = `
+                            <span class="text-slate-300">${providerLabels[s.provider] || s.provider}</span>
+                            <span class="flex items-center gap-1.5">
+                                <span class="w-1.5 h-1.5 rounded-full bg-emerald-400 inline-block"></span>
+                                <span class="text-emerald-400 tracking-wider">${s.preview}</span>
+                            </span>`;
+                    } else {
+                        row.innerHTML = `
+                            <span class="text-slate-500">${providerLabels[s.provider] || s.provider}</span>
+                            <span class="flex items-center gap-1.5">
+                                <span class="w-1.5 h-1.5 rounded-full bg-rose-500 inline-block"></span>
+                                <span class="text-rose-500">Not Set</span>
+                            </span>`;
+                    }
+                    container.appendChild(row);
+                });
+            } catch(err) {
+                document.getElementById('vault-key-status').innerHTML = '<div class="text-rose-500 text-center py-2">Failed to load vault status</div>';
             }
         }
 
@@ -317,6 +361,7 @@
         fetchMetrics();
         fetchModels();
         fetchSystemStatus();
+        fetchKeyStatus();
         setInterval(() => {
             fetchMetrics();
             fetchModels();

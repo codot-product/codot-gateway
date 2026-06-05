@@ -61,6 +61,14 @@ else
     sudo mv "$TMP_FILE" "$INSTALL_DIR/$BINARY_NAME"
 fi
 
+# 6. macOS: ad-hoc sign the binary so Gatekeeper doesn't SIGKILL it on Apple Silicon
+if [ "$OS" = "darwin" ]; then
+    echo "🔏 Applying ad-hoc code signature for macOS Gatekeeper compatibility..."
+    codesign --sign - --force "$INSTALL_DIR/$BINARY_NAME" 2>/dev/null || true
+    xattr -d com.apple.quarantine "$INSTALL_DIR/$BINARY_NAME" 2>/dev/null || true
+    echo "✅ Code signature applied successfully."
+fi
+
 echo ""
 echo "=================================================================="
 echo "🎉 CODOT GATEWAY SUCCESSFULLY INSTALLED!"

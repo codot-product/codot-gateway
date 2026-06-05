@@ -12,6 +12,7 @@ import (
 	"net/http"
 	"os"
 	"os/exec"
+	"runtime"
 	"strings"
 
 	"github.com/codot-product/codot-gateway/api/openai"
@@ -144,16 +145,37 @@ func main() {
 		}
 	}()
 
-	// 3. Inject required environment context parameters so every child process routes through the proxy
+	// 3. Inject your required environment context parameters natively
 	os.Setenv("ANTHROPIC_BASE_URL", "http://localhost:"+port)
-	os.Setenv("ANTHROPIC_API_KEY", db.GetAPIKey("anthropic"))
 	os.Setenv("NODE_TLS_REJECT_UNAUTHORIZED", "0")
 	os.Setenv("CLAUDE_CODE_DISABLE_NONESSENTIAL_TRAFFIC", "1")
 
-	// 4. Detect native shell configuration (defaults to zsh on macOS)
+	// If no host key is set, give Claude a placeholder to kick it into API Key mode.
+	// The proxy handler will swap this out for the real vault token on every outbound request.
+	if os.Getenv("ANTHROPIC_API_KEY") == "" {
+		os.Setenv("ANTHROPIC_API_KEY", "codot-managed-vault-active")
+		log.Println("🔑 No host key found — injecting managed vault placeholder for Claude CLI handshake.")
+	} else {
+		log.Printf("🔑 Securely inherited active API Key authorization context map.")
+	}
+
+	// 4. Detect native operating system and select the appropriate shell configuration
 	currentShell := os.Getenv("SHELL")
-	if currentShell == "" {
-		currentShell = "/bin/zsh"
+	var shellArgs []string
+
+	if runtime.GOOS == "windows" {
+		// Default to PowerShell on Windows if %SHELL% env isn't assigned
+		if currentShell == "" {
+			currentShell = "powershell.exe"
+		}
+		// Windows shells (cmd/powershell) do not accept or require the UNIX "-i" flag
+		shellArgs = []string{}
+	} else {
+		// Default to standard zsh on UNIX/macOS systems
+		if currentShell == "" {
+			currentShell = "/bin/zsh"
+		}
+		shellArgs = []string{"-i"}
 	}
 
 	log.Println("\n==================================================================")
@@ -163,8 +185,8 @@ func main() {
 	log.Println("👉 Type 'exit' to shut down the proxy gateway and return to normal.")
 	log.Println("==================================================================\n")
 
-	// 5. Spawn the subshell with the interactive flag (-i) so zsh respects stdin inside VS Code
-	shellCmd := exec.Command(currentShell, "-i")
+	// 5. Spawn the subshell dynamically leveraging our evaluated OS configurations
+	shellCmd := exec.Command(currentShell, shellArgs...)
 	shellCmd.Stdin = os.Stdin
 	shellCmd.Stdout = os.Stdout
 	shellCmd.Stderr = os.Stderr
@@ -482,24 +504,44 @@ func handleAnthropicMesh(w http.ResponseWriter, r *http.Request) {
 	}
 
 	// 5. Pull authentication key out of the vault layers
-	authHeader := r.Header.Get("Authorization")
-	liveKey := db.GetAPIKey("anthropic")
-	if liveKey == "" {
-		liveKey = os.Getenv("ANTHROPIC_API_KEY")
-	}
-
-	if authHeader != "" && strings.HasPrefix(authHeader, "Bearer ") {
-		liveKey = strings.TrimPrefix(authHeader, "Bearer ")
-	}
-
-	// Force inject standard compliant Anthropic Developer Headers
-	req.Header.Set("X-Api-Key", liveKey)
+	// Always set standard Anthropic headers first
 	req.Header.Set("Anthropic-Version", "2023-06-01")
 	req.Header.Set("Content-Type", "application/json")
 
-	// 6. Dispatch the connection
+	// 1. Clear out whatever placeholder header Claude CLI sent down the pipe
+	req.Header.Del("x-api-key")
+	req.Header.Del("X-Api-Key")
+
+	// 2. Fetch the real active credential from the Web Dashboard Vault (SQLite: provider="anthropic")
+	realDashboardKey := db.GetAPIKey("anthropic")
+	log.Printf("🔍 [VAULT DEBUG] db.GetAPIKey(\"anthropic\") returned %d chars", len(realDashboardKey))
+
+	if realDashboardKey != "" {
+		// Mask the key for safe logging — show only first 10 chars
+		masked := realDashboardKey
+		if len(masked) > 10 {
+			masked = masked[:10] + "...[REDACTED]"
+		}
+		log.Printf("🔑 [PROXY SUCCESS] Securely injected real Anthropic key from Vault. Key prefix: %s", masked)
+		req.Header.Set("X-Api-Key", realDashboardKey)
+	} else {
+		// Fallback: use whatever is in the shell environment (real key or placeholder)
+		fallbackKey := os.Getenv("ANTHROPIC_API_KEY")
+		masked := fallbackKey
+		if len(masked) > 10 {
+			masked = masked[:10] + "...[REDACTED]"
+		}
+		log.Printf("⚠️ [PROXY WARNING] Vault lookup empty — falling back to env key. Env prefix: %s", masked)
+		if fallbackKey == "codot-managed-vault-active" || fallbackKey == "" {
+			log.Println("🚨 [PROXY ERROR] Env key is still the placeholder — save your real key via the Web Dashboard Vault!")
+		}
+		req.Header.Set("X-Api-Key", fallbackKey)
+	}
+
+	// 3. Issue the network call straight down the pipe
 	client := &http.Client{}
 	resp, err := client.Do(req)
+
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusBadGateway)
 		return

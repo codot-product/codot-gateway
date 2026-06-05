@@ -514,26 +514,15 @@ func handleAnthropicMesh(w http.ResponseWriter, r *http.Request) {
 
 	// 2. Fetch the real active credential from the Web Dashboard Vault (SQLite: provider="anthropic")
 	realDashboardKey := db.GetAPIKey("anthropic")
-	log.Printf("🔍 [VAULT DEBUG] db.GetAPIKey(\"anthropic\") returned %d chars", len(realDashboardKey))
-
 	if realDashboardKey != "" {
-		// Mask the key for safe logging — show only first 10 chars
-		masked := realDashboardKey
-		if len(masked) > 10 {
-			masked = masked[:10] + "...[REDACTED]"
-		}
-		log.Printf("🔑 [PROXY SUCCESS] Securely injected real Anthropic key from Vault. Key prefix: %s", masked)
 		req.Header.Set("X-Api-Key", realDashboardKey)
 	} else {
 		// Fallback: use whatever is in the shell environment (real key or placeholder)
 		fallbackKey := os.Getenv("ANTHROPIC_API_KEY")
-		masked := fallbackKey
-		if len(masked) > 10 {
-			masked = masked[:10] + "...[REDACTED]"
-		}
-		log.Printf("⚠️ [PROXY WARNING] Vault lookup empty — falling back to env key. Env prefix: %s", masked)
 		if fallbackKey == "codot-managed-vault-active" || fallbackKey == "" {
-			log.Println("🚨 [PROXY ERROR] Env key is still the placeholder — save your real key via the Web Dashboard Vault!")
+			log.Println("🚨 [VAULT] No key found — save your Anthropic key via the Web Dashboard.")
+		} else {
+			log.Println("⚠️ [VAULT] Vault empty, falling back to shell env key.")
 		}
 		req.Header.Set("X-Api-Key", fallbackKey)
 	}
@@ -541,6 +530,7 @@ func handleAnthropicMesh(w http.ResponseWriter, r *http.Request) {
 	// 3. Issue the network call straight down the pipe
 	client := &http.Client{}
 	resp, err := client.Do(req)
+
 
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusBadGateway)

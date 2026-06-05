@@ -583,6 +583,11 @@ func handleAnthropicMesh(w http.ResponseWriter, r *http.Request) {
 
 		// Pass the telemetry details cleanly down to SQLite storage
 		db.RecordMetric(requestedModel, routedModel, promptCharCount, 0.00300)
-		log.Printf("📊 [METRICS] Swapped Route Saved: %s ➔ %s (%d chars)", requestedModel, routedModel, promptCharCount)
+
+		// Only print to the terminal console if explicitly set to verbose mode
+		if os.Getenv("GATEWAY_VERBOSE") == "true" {
+			log.Printf("📊 [METRICS] Swapped Route Saved: %s ➔ %s (%d chars)", requestedModel, routedModel, promptCharCount)
+		}
+
 	}
 }

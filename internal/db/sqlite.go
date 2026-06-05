@@ -3,6 +3,8 @@ package db
 import (
 	"database/sql"
 	"log"
+	"os"
+	"path/filepath"
 	"time"
 
 	_ "github.com/ncruces/go-sqlite3/driver"
@@ -22,9 +24,28 @@ type AuditLog struct {
 	Snippet   string    `db:"snippet"`
 }
 
+// resolveDBPath returns a stable, absolute path for the database file
+// so the gateway always uses the same vault regardless of working directory.
+func resolveDBPath() string {
+	homeDir, err := os.UserHomeDir()
+	if err != nil {
+		// Fallback to CWD if home directory can't be determined
+		log.Println("[DB] Warning: could not resolve home dir, using local path")
+		return "./gateway_metrics.db"
+	}
+	dbDir := filepath.Join(homeDir, ".codot")
+	if err := os.MkdirAll(dbDir, 0700); err != nil {
+		log.Printf("[DB] Warning: could not create ~/.codot dir: %v", err)
+		return "./gateway_metrics.db"
+	}
+	return filepath.Join(dbDir, "gateway_metrics.db")
+}
+
 func InitDB() {
+	dbPath := resolveDBPath()
+	log.Printf("💾 Database path: %s", dbPath)
 	var err error
-	DB, err = sql.Open("sqlite3", "./gateway_metrics.db")
+	DB, err = sql.Open("sqlite3", dbPath)
 	if err != nil {
 		log.Fatalf("Fatal: Failed to connect to local SQLite engine: %v", err)
 	}
